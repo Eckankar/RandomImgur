@@ -30,7 +30,7 @@ exception EndComputation
 
 let generateId len =
        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz"
-    |> List.replicate 5
+    |> List.replicate len
     |> List.map (fun s -> s.Chars (random.Next s.Length))
     |> String.Concat
 
