@@ -20,7 +20,8 @@ let modes = [
     ("jpg-only", Filters.fileType "jpg|jpeg");
     ("gif-only", Filters.fileType "gif");
     ("png-only", Filters.fileType "png");
-    ("< 20 views", Filters.pViews (fun n -> n <= 20))
+    ("< 10 views", Filters.pViews (fun n -> n <= 10))
+    ("> 1000 views", Filters.pViews (fun n -> n >= 1000))
 ]
 
 type progressReport = Failure
@@ -58,7 +59,7 @@ and pageDownloaded (sender : obj) (args:DownloadStringCompletedEventArgs) =
         let client = sender :?> WebClient
         let (id, thumbData) = args.UserState :?> string * byte[]
 
-        if not args.Cancelled && args.Error = null && filter args.Result then
+        if not args.Cancelled && args.Error = null && (try filter args.Result with | _ -> false) then
             bw.ReportProgress(0, 
                 Picture (Stream.Synchronized (new MemoryStream(thumbData)), new Uri("http://i.imgur.com/" + id + ".jpg"))
             )
