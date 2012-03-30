@@ -49,6 +49,7 @@
             ) Imgur.modes
 
             imagePanel.AutoScroll <- true
+            imagePanel.MouseEnter.Add(fun _ -> ignore (imagePanel.Focus()))
 
             status.AutoSize <- true
             statusPanel.Controls.Add status
