@@ -6,7 +6,7 @@ open System.Text.RegularExpressions
 let empty _ = true
 
 let fileType ext =
-    let rx = new Regex(@"<link rel=image_src href=\S*." + ext + "\s*/>")
+    let rx = new Regex(@"<link rel=""image_src"" href=""\S*." + ext + @"""\s*/>")
     fun body -> rx.IsMatch body
     
 let pViews p =
