@@ -46,6 +46,7 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Settings.fs" />
     <Compile Include="Filters.fs" />
     <Compile Include="Imgur.fs" />
     <Compile Include="Program.fs" />

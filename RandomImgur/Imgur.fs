@@ -15,6 +15,7 @@ let mutable bw : BackgroundWorker = null
 let mutable filter : string -> bool = Filters.empty
 let mutable completed = 0
 let mutable webClients : WebClient[] = null
+let settings = new Settings.Settings()
 
 let modes = [
     ("Random", Filters.empty);
@@ -88,13 +89,19 @@ let findPictures (sender : obj) (args : DoWorkEventArgs) =
 
     completed <- count
 
-    let dummyClient = new WebClient()
-    ignore (dummyClient.DownloadString ("http://google.com"))
+    settings.Reload()
+    let proxy = (
+        if settings.useProxy then
+            let dummyClient = new WebClient()
+            ignore (dummyClient.DownloadString ("http://google.com"))
+            dummyClient.Proxy
+        else null
+    )
 
     webClients <- [|
         for i in 1 .. count ->
             let client = new WebClient()
-            client.Proxy <- dummyClient.Proxy
+            client.Proxy <- proxy
             client.DownloadDataCompleted.AddHandler(new DownloadDataCompletedEventHandler(thumbDownloaded))
             client.DownloadStringCompleted.AddHandler(new DownloadStringCompletedEventHandler(pageDownloaded))
             getPicture (client)

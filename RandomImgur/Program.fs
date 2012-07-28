@@ -20,6 +20,8 @@
         let buttonStrip = new ToolStrip()
         let statusPanel = new Panel()
         let status = new Label()
+        let proxyBtn = new ToolStripButton("Use proxy")
+        let settings = new Settings.Settings()
 
         let bw = new BackgroundWorker()
        
@@ -47,6 +49,13 @@
 
                 ignore (buttonStrip.Items.Add button)
             ) Imgur.modes
+
+            ignore (buttonStrip.Items.Add (new ToolStripSeparator()))
+           
+            proxyBtn.CheckOnClick <- true
+            proxyBtn.Checked <- settings.useProxy
+            proxyBtn.CheckedChanged.Add(fun _ -> settings.useProxy <- proxyBtn.Checked; settings.Save())
+            ignore (buttonStrip.Items.Add proxyBtn)
 
             imagePanel.AutoScroll <- true
             imagePanel.MouseEnter.Add(fun _ -> ignore (imagePanel.Focus()))
