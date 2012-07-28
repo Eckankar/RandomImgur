@@ -14,6 +14,7 @@ let mutable proxy = null : IWebProxy
 let mutable bw : BackgroundWorker = null
 let mutable filter : string -> bool = Filters.empty
 let mutable completed = 0
+let mutable webClients : WebClient[] = null
 
 let modes = [
     ("Random", Filters.empty);
@@ -43,7 +44,7 @@ let rec getPicture (client : WebClient) =
         client.DownloadDataAsync(thumbUri, id)
 
 and thumbDownloaded (sender : obj) (args:DownloadDataCompletedEventArgs) =
-    if bw.CancellationPending then ignore (Interlocked.Decrement(&completed)) else
+    if bw.CancellationPending || args.Cancelled then ignore (Interlocked.Decrement(&completed)) else
         let client = sender :?> WebClient
         let id = args.UserState :?> string
 
@@ -55,7 +56,7 @@ and thumbDownloaded (sender : obj) (args:DownloadDataCompletedEventArgs) =
             client.DownloadStringAsync(pageUri, (id, args.Result))
 
 and pageDownloaded (sender : obj) (args:DownloadStringCompletedEventArgs) =
-    if bw.CancellationPending then ignore (Interlocked.Decrement(&completed)) else
+    if bw.CancellationPending || args.Cancelled then ignore (Interlocked.Decrement(&completed)) else
         let client = sender :?> WebClient
         let (id, thumbData) = args.UserState :?> string * byte[]
 
@@ -71,6 +72,12 @@ and pageDownloaded (sender : obj) (args:DownloadStringCompletedEventArgs) =
 let rec loopUntilCompleted () =
     if completed = 0 then ()
     else
+        if bw.CancellationPending then
+            Array.iter (fun (wc:WebClient) -> wc.CancelAsync ()) webClients
+            webClients <- [| |]
+        else
+            ()
+
         Threading.Thread.Sleep(100) 
         loopUntilCompleted ()
 
@@ -84,16 +91,16 @@ let findPictures (sender : obj) (args : DoWorkEventArgs) =
     let dummyClient = new WebClient()
     ignore (dummyClient.DownloadString ("http://google.com"))
 
-    try
-        ignore [| for i in 1 .. count ->
-                    let client = new WebClient()
-                    client.Proxy <- dummyClient.Proxy
-                    client.DownloadDataCompleted.AddHandler(new DownloadDataCompletedEventHandler(thumbDownloaded))
-                    client.DownloadStringCompleted.AddHandler(new DownloadStringCompletedEventHandler(pageDownloaded))
-                    getPicture (client) 
-        |]
-    with
-        | :? EndComputation -> ()
+    webClients <- [|
+        for i in 1 .. count ->
+            let client = new WebClient()
+            client.Proxy <- dummyClient.Proxy
+            client.DownloadDataCompleted.AddHandler(new DownloadDataCompletedEventHandler(thumbDownloaded))
+            client.DownloadStringCompleted.AddHandler(new DownloadStringCompletedEventHandler(pageDownloaded))
+            getPicture (client)
+                    
+            client 
+    |]
 
     loopUntilCompleted ()
 
