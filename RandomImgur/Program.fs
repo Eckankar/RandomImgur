@@ -7,8 +7,6 @@
     open System.ComponentModel
     open System.Text
 
-    let NUM_PICTURES = 100
-  
     let mainForm = new Form()
 
     type status = StatusProgress | StatusCancel | StatusComplete | StatusStartup
@@ -19,10 +17,14 @@
         let imagePanel = new FlowLayoutPanel()
         let buttonStrip = new ToolStrip()
         let statusPanel = new Panel()
+        let configContainer = new GroupBox()
+        let configPanel = new TableLayoutPanel()
+        let centralPanel = new Panel()
         let status = new Label()
         let proxyBtn = new ToolStripButton("Use proxy")
         let settings = new Settings.Settings()
 
+        let mutable currentNumPics = settings.numPics
         let bw = new BackgroundWorker()
        
         let mutable pendingWork = None : (unit -> unit) option
@@ -37,8 +39,11 @@
             form.AutoScaleDimensions <- new System.Drawing.SizeF(1024.0f, 768.0f)
             form.ClientSize <- new System.Drawing.Size(1024, 768)
 
+            centralPanel.Dock <- DockStyle.Fill
             imagePanel.Dock <- DockStyle.Fill
             buttonStrip.Dock <- DockStyle.Top
+            configPanel.Dock <- DockStyle.Top
+            configContainer.Dock <- DockStyle.Right
             statusPanel.Dock <- DockStyle.Bottom
 
             // Populate strip with buttons
@@ -51,11 +56,44 @@
             ) Imgur.modes
 
             ignore (buttonStrip.Items.Add (new ToolStripSeparator()))
-           
-            proxyBtn.CheckOnClick <- true
-            proxyBtn.Checked <- settings.useProxy
-            proxyBtn.CheckedChanged.Add(fun _ -> settings.useProxy <- proxyBtn.Checked; settings.Save())
-            ignore (buttonStrip.Items.Add proxyBtn)
+
+            let configButton = new ToolStripButton()
+            configButton.Text <- "Options"
+            configButton.CheckOnClick <- true
+            configButton.Checked <- false
+            configButton.CheckedChanged.Add(fun _ -> configContainer.Visible <- configButton.Checked)
+            ignore (buttonStrip.Items.Add configButton)
+
+            configPanel.GrowStyle <- TableLayoutPanelGrowStyle.AddRows
+            configPanel.AutoSize <- true
+            
+            ignore (configPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)))
+            let proxyCheckbox = new CheckBox()
+            proxyCheckbox.Text <- "Use proxy"
+            proxyCheckbox.Checked <- settings.useProxy
+            proxyCheckbox.CheckedChanged.Add(fun _ -> settings.useProxy <- proxyCheckbox.Checked; settings.Save())
+            configPanel.Controls.Add(proxyCheckbox, 0, 0)
+
+            ignore (configPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)))
+            let imageCountLabel = new Label()
+            imageCountLabel.Dock <- DockStyle.Fill
+            imageCountLabel.TextAlign <- ContentAlignment.MiddleLeft
+            imageCountLabel.Text <- "Number of images"
+            configPanel.Controls.Add(imageCountLabel, 0, 1)
+            let imageCount = new NumericUpDown()
+            imageCount.Minimum <- (decimal)1
+            imageCount.Maximum <- (decimal)1000000
+            imageCount.Value <- (decimal)settings.numPics
+            imageCount.Increment <- (decimal)1
+            imageCount.Dock <- DockStyle.Fill
+            imageCount.DecimalPlaces <- 0
+            imageCount.AutoSize <- true
+            imageCount.ValueChanged.Add(fun _ -> settings.numPics <- (int)imageCount.Value; settings.Save())           
+            configPanel.Controls.Add(imageCount, 1, 1)
+
+            configContainer.Width <- 200
+            configContainer.Text <- "Options"
+            configContainer.Visible <- false
 
             imagePanel.AutoScroll <- true
             imagePanel.MouseEnter.Add(fun _ -> ignore (imagePanel.Focus()))
@@ -64,8 +102,13 @@
             statusPanel.Controls.Add status
             statusPanel.AutoSize <- true
 
+            configContainer.Controls.Add configPanel
+
+            centralPanel.Controls.Add imagePanel
+            centralPanel.Controls.Add configContainer
+
+            form.Controls.Add centralPanel
             form.Controls.Add buttonStrip
-            form.Controls.Add imagePanel
             form.Controls.Add statusPanel
 
             bw.RunWorkerCompleted.AddHandler(new RunWorkerCompletedEventHandler(this.bwCompleted))
@@ -89,7 +132,7 @@
         member this.setStatusText s =
             status.Text <-
               match s with
-                | StatusProgress -> sprintf "%d of %d images downloaded. (%d%%, %d failures)" !imgCounter NUM_PICTURES (!imgCounter * 100 / NUM_PICTURES) !failures
+                | StatusProgress -> sprintf "%d of %d images downloaded. (%d%%, %d failures)" !imgCounter currentNumPics (!imgCounter * 100 / currentNumPics) !failures
                 | StatusCancel   -> "Cancelling previous request, please wait..."
                 | StatusComplete -> "Completed."
                 | StatusStartup  -> "By @pishmoffle (http://mathemaniac.org)"
@@ -131,6 +174,7 @@
                 imagePanel.Controls.Clear ()                
                 this.setStatusText StatusProgress
             
-                bw.RunWorkerAsync((NUM_PICTURES, filter))
+                currentNumPics <- settings.numPics
+                bw.RunWorkerAsync((settings.numPics, filter))
             
             
