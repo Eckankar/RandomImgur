@@ -13,7 +13,7 @@ open System.Runtime.InteropServices
 [<assembly: AssemblyCopyright("Copyright ©  2012")>]
 [<assembly: AssemblyTrademark("")>]
 
-[<assembly: AssemblyVersion("1.0.4.0")>]
+[<assembly: AssemblyVersion("1.0.4.1")>]
 
 [<STAThread>]
 do Application.Run(new MainForm())

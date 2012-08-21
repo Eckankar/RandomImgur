@@ -66,30 +66,35 @@
 
             configPanel.GrowStyle <- TableLayoutPanelGrowStyle.AddRows
             configPanel.AutoSize <- true
-            
-            ignore (configPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)))
-            let proxyCheckbox = new CheckBox()
-            proxyCheckbox.Text <- "Use proxy"
-            proxyCheckbox.Checked <- settings.useProxy
-            proxyCheckbox.CheckedChanged.Add(fun _ -> settings.useProxy <- proxyCheckbox.Checked; settings.Save())
-            configPanel.Controls.Add(proxyCheckbox, 0, 0)
-
-            ignore (configPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)))
-            let imageCountLabel = new Label()
-            imageCountLabel.Dock <- DockStyle.Fill
-            imageCountLabel.TextAlign <- ContentAlignment.MiddleLeft
-            imageCountLabel.Text <- "Number of images"
-            configPanel.Controls.Add(imageCountLabel, 0, 1)
-            let imageCount = new NumericUpDown()
-            imageCount.Minimum <- (decimal)1
-            imageCount.Maximum <- (decimal)1000000
-            imageCount.Value <- (decimal)settings.numPics
-            imageCount.Increment <- (decimal)1
-            imageCount.Dock <- DockStyle.Fill
-            imageCount.DecimalPlaces <- 0
-            imageCount.AutoSize <- true
-            imageCount.ValueChanged.Add(fun _ -> settings.numPics <- (int)imageCount.Value; settings.Save())           
-            configPanel.Controls.Add(imageCount, 1, 1)
+                        
+            List.iteri (fun curRow (label, name, stype) ->
+                ignore (configPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize)))
+                match stype with
+                    | Settings.BooleanSetting ->
+                        let checkbox = new CheckBox()
+                        checkbox.Text <- label
+                        checkbox.AutoSize <- true
+                        checkbox.Checked <- settings.Item(name) :?> bool
+                        checkbox.CheckedChanged.Add(fun _ -> settings.Item(name) <- checkbox.Checked; settings.Save())
+                        configPanel.Controls.Add(checkbox, 0, curRow)
+                        configPanel.SetColumnSpan(checkbox, 2)
+                    | Settings.IntegerSetting ->
+                        let tlabel = new Label()
+                        tlabel.Dock <- DockStyle.Fill
+                        tlabel.TextAlign <- ContentAlignment.MiddleLeft
+                        tlabel.Text <- label
+                        configPanel.Controls.Add(tlabel, 0, curRow)
+                        let numUpDown = new NumericUpDown()
+                        numUpDown.Minimum <- (decimal)1
+                        numUpDown.Maximum <- (decimal)1000000
+                        numUpDown.Value <- (decimal)settings.numPics
+                        numUpDown.Increment <- (decimal)1
+                        numUpDown.Dock <- DockStyle.Fill
+                        numUpDown.DecimalPlaces <- 0
+                        numUpDown.AutoSize <- true
+                        numUpDown.ValueChanged.Add(fun _ -> settings.Item(name) <- (int)numUpDown.Value; settings.Save())           
+                        configPanel.Controls.Add(numUpDown, 1, curRow)
+            ) Settings.settings
 
             configContainer.Width <- 200
             configContainer.Text <- "Options"
@@ -119,6 +124,32 @@
             bw.WorkerSupportsCancellation <- true
 
             this.setStatusText StatusStartup
+
+            if settings.checkForUpdates
+            then
+                let updateWorker = new BackgroundWorker()
+                updateWorker.DoWork.AddHandler(new DoWorkEventHandler(fun sender args -> this.checkForUpdates ()))
+                updateWorker.RunWorkerAsync ()
+            else ()
+
+        member this.checkForUpdates () =
+            try
+                let webclient = new WebClient()
+                if settings.useProxy then () else webclient.Proxy <- null
+                let data = webclient.DownloadString("http://mathemaniac.org/apps/randomimgur/latest-version.txt")
+                let latestversion = Version.Parse(data)
+                let myversion = Version.Parse(Application.ProductVersion)
+                if latestversion > myversion then
+                    let res = MessageBox.Show ("A new version (v" + latestversion.ToString() + ") is available for download!\n" +
+                                               "Do you wish to go to the download page to download the new version?",
+                                               "New version available!",
+                                               MessageBoxButtons.YesNo)
+                    if res = DialogResult.Yes
+                    then this.openUrl(new Uri("http://mathemaniac.org/wp/2012/01/random-imgur-pictures/"))
+                    else ()
+                else ()
+            with
+                | ex -> ()
 
         member this.bwCompleted sender (args : RunWorkerCompletedEventArgs) =
             if args.Cancelled && pendingWork.IsSome then
@@ -176,5 +207,3 @@
             
                 currentNumPics <- settings.numPics
                 bw.RunWorkerAsync((settings.numPics, filter))
-            
-            

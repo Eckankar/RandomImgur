@@ -2,6 +2,14 @@
 
 open System.Configuration
 
+type SettingType = BooleanSetting | IntegerSetting
+
+let settings = [
+    ("Use proxy", "UseProxy", BooleanSetting);
+    ("Check for updates", "CheckForUpdates", BooleanSetting);
+    ("Number of images", "NumPics", IntegerSetting);
+]
+
 type Settings() =
     inherit ApplicationSettingsBase()
 
@@ -10,6 +18,12 @@ type Settings() =
     member this.useProxy
         with get() = this.Item("UseProxy") :?> bool
         and set(value : bool) = this.Item("UseProxy") <- value
+
+    [<UserScopedSettingAttribute()>]
+    [<DefaultSettingValueAttribute("true")>]
+    member this.checkForUpdates
+        with get() = this.Item("CheckForUpdates") :?> bool
+        and set(value : bool) = this.Item("CheckForUpdates") <- value
 
     [<UserScopedSettingAttribute()>]
     [<DefaultSettingValueAttribute("100")>]
