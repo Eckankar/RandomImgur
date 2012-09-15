@@ -11,6 +11,8 @@
 
     type status = StatusProgress | StatusCancel | StatusComplete | StatusStartup
 
+    type ReportProgressDelegate = delegate of Imgur.progressReport -> unit
+
     type MainForm() as form =
         inherit Form()
 
@@ -23,6 +25,8 @@
         let status = new Label()
         let proxyBtn = new ToolStripButton("Use proxy")
         let settings = new Settings.Settings()
+
+        let mutable reportProgressDelegate = null : ReportProgressDelegate
 
         let mutable currentNumPics = settings.numPics
         let bw = new BackgroundWorker()
@@ -116,6 +120,8 @@
             form.Controls.Add buttonStrip
             form.Controls.Add statusPanel
 
+            reportProgressDelegate <- new ReportProgressDelegate(this.reportProgressHandler)
+
             bw.RunWorkerCompleted.AddHandler(new RunWorkerCompletedEventHandler(this.bwCompleted))
             bw.DoWork.AddHandler(new DoWorkEventHandler(Imgur.findPictures))
             bw.ProgressChanged.AddHandler(new ProgressChangedEventHandler(this.reportProgress))
@@ -156,7 +162,7 @@
                 pendingWork.Value ()
             else
                 this.setStatusText StatusComplete
-
+            
         member this.openUrl (url:Uri) =
             ignore (System.Diagnostics.Process.Start(url.ToString()))
 
@@ -172,6 +178,10 @@
 
         member this.reportProgress sender (args : ProgressChangedEventArgs) =
             let data = args.UserState :?> Imgur.progressReport
+            if this.IsDisposed then ()
+            else ignore (this.Invoke(reportProgressDelegate, data))
+
+        member this.reportProgressHandler data =
             match data with
                 | Imgur.Failure ->
                     failures := !failures + 1
