@@ -33,8 +33,7 @@
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <DocumentationFile>bin\Release\RandomImgur.XML</DocumentationFile>
-    <OtherFlags>
-    </OtherFlags>
+    <OtherFlags>--standalone</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
