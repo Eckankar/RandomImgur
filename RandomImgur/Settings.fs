@@ -8,6 +8,7 @@ let settings = [
     ("Use proxy", "UseProxy", BooleanSetting);
     ("Check for updates", "CheckForUpdates", BooleanSetting);
     ("Number of images", "NumPics", IntegerSetting);
+    ("Use old IDs?", "OldIdLength", BooleanSetting);
 ]
 
 type Settings() =
@@ -30,3 +31,9 @@ type Settings() =
     member this.numPics
         with get() = this.Item("NumPics") :?> int
         and set(value : int) = this.Item("NumPics") <- value
+
+    [<UserScopedSettingAttribute()>]
+    [<DefaultSettingValueAttribute("true")>]
+    member this.oldIdLength
+        with get() = this.Item("OldIdLength") :?> bool
+        and set(value : bool) = this.Item("OldIdLength") <- value

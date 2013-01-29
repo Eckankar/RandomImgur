@@ -39,7 +39,7 @@ let generateId len =
 
 let rec getPicture (client : WebClient) = 
     if bw.CancellationPending then ignore (Interlocked.Decrement(&completed)) else
-        let id = generateId 5
+        let id = generateId (if settings.oldIdLength then 5 else 7)
         
         let thumbUri = new Uri("http://i.imgur.com/" + id + "s.png")
         client.DownloadDataAsync(thumbUri, id)
