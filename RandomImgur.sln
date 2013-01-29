@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "RandomImgur", "RandomImgur\RandomImgur.fsproj", "{6BC36E9D-8A0E-4FBD-A2E3-BD27485D75D2}"
 EndProject
 Global
