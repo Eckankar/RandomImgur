@@ -50,6 +50,9 @@
             configContainer.Dock <- DockStyle.Right
             statusPanel.Dock <- DockStyle.Bottom
 
+            // Fix problem where FlowLayoutPanel doesn't render elements after a certain point.
+            imagePanel.Scroll.Add(fun _ -> imagePanel.PerformLayout())
+
             // Populate strip with buttons
             List.iter (fun (label, filter) ->
                 let button = new ToolStripButton()
