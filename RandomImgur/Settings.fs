@@ -11,29 +11,29 @@ let settings = [
     ("Use old IDs?", "OldIdLength", BooleanSetting);
 ]
 
-type Settings() =
+type public Settings() =
     inherit ApplicationSettingsBase()
 
     [<UserScopedSettingAttribute()>]
     [<DefaultSettingValueAttribute("false")>]
-    member this.useProxy
+    member this.UseProxy
         with get() = this.Item("UseProxy") :?> bool
         and set(value : bool) = this.Item("UseProxy") <- value
 
     [<UserScopedSettingAttribute()>]
     [<DefaultSettingValueAttribute("true")>]
-    member this.checkForUpdates
+    member this.CheckForUpdates
         with get() = this.Item("CheckForUpdates") :?> bool
         and set(value : bool) = this.Item("CheckForUpdates") <- value
 
     [<UserScopedSettingAttribute()>]
     [<DefaultSettingValueAttribute("100")>]
-    member this.numPics
+    member this.NumPics
         with get() = this.Item("NumPics") :?> int
         and set(value : int) = this.Item("NumPics") <- value
 
     [<UserScopedSettingAttribute()>]
     [<DefaultSettingValueAttribute("true")>]
-    member this.oldIdLength
+    member this.OldIdLength
         with get() = this.Item("OldIdLength") :?> bool
         and set(value : bool) = this.Item("OldIdLength") <- value

@@ -28,7 +28,7 @@
 
         let mutable reportProgressDelegate = null : ReportProgressDelegate
 
-        let mutable currentNumPics = settings.numPics
+        let mutable currentNumPics = 0
         let bw = new BackgroundWorker()
        
         let mutable pendingWork = None : (unit -> unit) option
@@ -62,6 +62,8 @@
                 ignore (buttonStrip.Items.Add button)
             ) Imgur.modes
 
+            
+
             ignore (buttonStrip.Items.Add (new ToolStripSeparator()))
 
             let configButton = new ToolStripButton()
@@ -94,7 +96,7 @@
                         let numUpDown = new NumericUpDown()
                         numUpDown.Minimum <- (decimal)1
                         numUpDown.Maximum <- (decimal)1000000
-                        numUpDown.Value <- (decimal)settings.numPics
+                        numUpDown.Value <- (decimal) (settings.Item(name) :?> int)
                         numUpDown.Increment <- (decimal)1
                         numUpDown.Dock <- DockStyle.Fill
                         numUpDown.DecimalPlaces <- 0
@@ -134,7 +136,7 @@
 
             this.setStatusText StatusStartup
 
-            if settings.checkForUpdates
+            if settings.CheckForUpdates
             then
                 let updateWorker = new BackgroundWorker()
                 updateWorker.DoWork.AddHandler(new DoWorkEventHandler(fun sender args -> this.checkForUpdates ()))
@@ -144,7 +146,7 @@
         member this.checkForUpdates () =
             try
                 let webclient = new WebClient()
-                if settings.useProxy then () else webclient.Proxy <- null
+                if settings.UseProxy then () else webclient.Proxy <- null
                 let data = webclient.DownloadString("http://mathemaniac.org/apps/randomimgur/latest-version.txt")
                 let latestversion = Version.Parse(data)
                 let myversion = Version.Parse(Application.ProductVersion)
@@ -215,8 +217,9 @@
                 pendingWork <- None
                 imgCounter := 0
                 failures := 0
-                imagePanel.Controls.Clear ()                
+                imagePanel.Controls.Clear ()      
+                          
+                currentNumPics <- settings.NumPics
                 this.setStatusText StatusProgress
             
-                currentNumPics <- settings.numPics
-                bw.RunWorkerAsync((settings.numPics, filter))
+                bw.RunWorkerAsync((settings.NumPics, filter))

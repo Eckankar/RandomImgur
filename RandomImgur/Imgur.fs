@@ -39,7 +39,7 @@ let generateId len =
 
 let rec getPicture (client : WebClient) = 
     if bw.CancellationPending then ignore (Interlocked.Decrement(&completed)) else
-        let id = generateId (if settings.oldIdLength then 5 else 7)
+        let id = generateId (if settings.OldIdLength then 5 else 7)
         
         let thumbUri = new Uri("http://i.imgur.com/" + id + "s.png")
         client.DownloadDataAsync(thumbUri, id)
@@ -91,7 +91,7 @@ let findPictures (sender : obj) (args : DoWorkEventArgs) =
 
     settings.Reload()
     let proxy = (
-        if settings.useProxy then
+        if settings.UseProxy then
             let dummyClient = new WebClient()
             ignore (dummyClient.DownloadString ("http://google.com"))
             dummyClient.Proxy
