@@ -13,9 +13,9 @@ let mutable proxy = null : IWebProxy
 
 let mutable bw : BackgroundWorker = null
 let mutable filter : string -> bool = Filters.empty
-let mutable completed = 0
+let mutable completed : int64 = (int64) 0
 let mutable webClients : WebClient[] = null
-let settings = new Settings.Settings()
+let mutable settings = new Settings.Settings()
 
 let modes = [
     ("Random", Filters.empty);
@@ -71,7 +71,7 @@ and pageDownloaded (sender : obj) (args:DownloadStringCompletedEventArgs) =
             ignore (getPicture client)
 
 let rec loopUntilCompleted () =
-    if completed = 0 then ()
+    if Interlocked.Read(&completed) = (int64)0 then ()
     else
         if bw.CancellationPending then
             Array.iter (fun (wc:WebClient) -> wc.CancelAsync ()) webClients
@@ -87,9 +87,10 @@ let findPictures (sender : obj) (args : DoWorkEventArgs) =
     let (count, filt) = args.Argument :?> int * (string -> bool)
     filter <- filt
 
-    completed <- count
+    ignore (Interlocked.Exchange(&completed, (int64)count))
 
-    settings.Reload()
+    settings <- new Settings.Settings()
+
     let proxy = (
         if settings.UseProxy then
             let dummyClient = new WebClient()
