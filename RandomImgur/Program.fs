@@ -37,6 +37,8 @@
 
         let client = new WebClient()
 
+        let onMono = Type.GetType ("Mono.Runtime") <> null
+
         do form.initialize
 
         member this.initialize = 
@@ -50,8 +52,11 @@
             configContainer.Dock <- DockStyle.Right
             statusPanel.Dock <- DockStyle.Bottom
 
-            // Fix problem where FlowLayoutPanel doesn't render elements after a certain point.
-            imagePanel.Scroll.Add(fun _ -> if settings.ImageListFix then imagePanel.PerformLayout() else ())
+            if onMono then
+                ()
+            else
+                // Fix problem where FlowLayoutPanel doesn't render elements after a certain point.
+                imagePanel.Scroll.Add(fun _ -> imagePanel.PerformLayout())
 
             // Populate strip with buttons
             List.iter (fun (label, filter) ->
@@ -61,8 +66,6 @@
 
                 ignore (buttonStrip.Items.Add button)
             ) Imgur.modes
-
-            
 
             ignore (buttonStrip.Items.Add (new ToolStripSeparator()))
 

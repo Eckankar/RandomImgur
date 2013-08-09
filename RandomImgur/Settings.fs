@@ -9,7 +9,6 @@ let settings = [
     ("Check for updates", "CheckForUpdates", BooleanSetting);
     ("Number of images", "NumPics", IntegerSetting);
     ("Use old IDs?", "OldIdLength", BooleanSetting);
-    ("Enable image list fix?", "ImageListFix", BooleanSetting);
 ]
 
 type public Settings() =
@@ -38,9 +37,3 @@ type public Settings() =
     member this.OldIdLength
         with get() = this.Item("OldIdLength") :?> bool
         and set(value : bool) = this.Item("OldIdLength") <- value
-
-    [<UserScopedSettingAttribute()>]
-    [<DefaultSettingValueAttribute("true")>]
-    member this.ImageListFix
-        with get() = this.Item("ImageListFix") :?> bool
-        and set(value : bool) = this.Item("ImageListFix") <- value
