@@ -51,7 +51,7 @@
             statusPanel.Dock <- DockStyle.Bottom
 
             // Fix problem where FlowLayoutPanel doesn't render elements after a certain point.
-            imagePanel.Scroll.Add(fun _ -> imagePanel.PerformLayout())
+            imagePanel.Scroll.Add(fun _ -> if settings.ImageListFix then imagePanel.PerformLayout() else ())
 
             // Populate strip with buttons
             List.iter (fun (label, filter) ->
