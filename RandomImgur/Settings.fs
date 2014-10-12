@@ -8,6 +8,7 @@ let settings = [
     ("Use proxy", "UseProxy", BooleanSetting);
     ("Check for updates", "CheckForUpdates", BooleanSetting);
     ("Number of images", "NumPics", IntegerSetting);
+    ("Number of connections", "NumThreads", IntegerSetting);
     ("Use old IDs?", "OldIdLength", BooleanSetting);
 ]
 
@@ -37,3 +38,10 @@ type public Settings() =
     member this.OldIdLength
         with get() = this.Item("OldIdLength") :?> bool
         and set(value : bool) = this.Item("OldIdLength") <- value
+
+
+    [<UserScopedSettingAttribute()>]
+    [<DefaultSettingValueAttribute("20")>]
+    member this.NumThreads
+        with get() = this.Item("NumThreads") :?> int
+        and set(value : int) = this.Item("NumThreads") <- value

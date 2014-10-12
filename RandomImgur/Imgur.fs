@@ -37,26 +37,26 @@ let generateId len =
     |> List.map (fun s -> s.Chars (random.Next s.Length))
     |> String.Concat
 
-let rec getPicture (client : WebClient) = 
-    if bw.CancellationPending then ignore (Interlocked.Decrement(&completed)) else
+let rec getPicture left (client : WebClient) = 
+    if bw.CancellationPending || !left = 0 then ignore (Interlocked.Decrement(&completed)) else
         let id = generateId (if settings.OldIdLength then 5 else 7)
         
         let thumbUri = new Uri("http://i.imgur.com/" + id + "s.png")
         client.DownloadDataAsync(thumbUri, id)
 
-and thumbDownloaded (sender : obj) (args:DownloadDataCompletedEventArgs) =
+and thumbDownloaded left (sender : obj) (args:DownloadDataCompletedEventArgs) =
     if bw.CancellationPending || args.Cancelled then ignore (Interlocked.Decrement(&completed)) else
         let client = sender :?> WebClient
         let id = args.UserState :?> string
 
         if args.Cancelled || args.Error <> null || client.ResponseHeaders.["Content-Length"] = "503" then
             bw.ReportProgress(0, Failure)
-            ignore (getPicture client)
+            ignore (getPicture left client)
         else
             let pageUri = new Uri("http://imgur.com/" + id)
             client.DownloadStringAsync(pageUri, (id, args.Result))
 
-and pageDownloaded (sender : obj) (args:DownloadStringCompletedEventArgs) =
+and pageDownloaded left (sender : obj) (args:DownloadStringCompletedEventArgs) =
     if bw.CancellationPending || args.Cancelled then ignore (Interlocked.Decrement(&completed)) else
         let client = sender :?> WebClient
         let (id, thumbData) = args.UserState :?> string * byte[]
@@ -65,10 +65,11 @@ and pageDownloaded (sender : obj) (args:DownloadStringCompletedEventArgs) =
             bw.ReportProgress(0, 
                 Picture (Stream.Synchronized (new MemoryStream(thumbData)), new Uri("http://i.imgur.com/" + id + ".jpg"))
             )
-            ignore (Interlocked.Decrement(&completed))
+            left := !left - 1
         else
             bw.ReportProgress(0, Failure)
-            ignore (getPicture client)
+        
+        ignore (getPicture left client)
 
 let rec loopUntilCompleted () =
     if Interlocked.Read(&completed) = (int64)0 then ()
@@ -87,7 +88,7 @@ let findPictures (sender : obj) (args : DoWorkEventArgs) =
     let (count, filt) = args.Argument :?> int * (string -> bool)
     filter <- filt
 
-    ignore (Interlocked.Exchange(&completed, (int64)count))
+    ignore (Interlocked.Exchange(&completed, (int64)settings.NumThreads))
 
     settings <- new Settings.Settings()
 
@@ -99,13 +100,15 @@ let findPictures (sender : obj) (args : DoWorkEventArgs) =
         else null
     )
 
+    let rem = count % settings.NumThreads;
     webClients <- [|
-        for i in 1 .. count ->
+        for i in 1 .. settings.NumThreads ->
+            let left = ref (count / settings.NumThreads + if i <= rem then 1 else 0)
             let client = new WebClient()
             client.Proxy <- proxy
-            client.DownloadDataCompleted.AddHandler(new DownloadDataCompletedEventHandler(thumbDownloaded))
-            client.DownloadStringCompleted.AddHandler(new DownloadStringCompletedEventHandler(pageDownloaded))
-            getPicture (client)
+            client.DownloadDataCompleted.AddHandler(new DownloadDataCompletedEventHandler(thumbDownloaded left))
+            client.DownloadStringCompleted.AddHandler(new DownloadStringCompletedEventHandler(pageDownloaded left))
+            getPicture left client
                     
             client 
     |]
