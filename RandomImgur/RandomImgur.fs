@@ -10,7 +10,7 @@ open System.Runtime.InteropServices
 [<assembly: AssemblyConfiguration("")>]
 [<assembly: AssemblyCompany("Sebastian Paaske Tørholm")>]
 [<assembly: AssemblyProduct("Random Imgur")>]
-[<assembly: AssemblyCopyright("Copyright ©  2012")>]
+[<assembly: AssemblyCopyright("Copyright ©  2012-2017")>]
 [<assembly: AssemblyTrademark("")>]
 
 [<assembly: AssemblyVersion("1.0.5.0")>]
